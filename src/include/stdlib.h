@@ -19,4 +19,6 @@ int atoi(char* s);
 // Returns the absolute value of `x`.
 int abs(int x);
 
+void abort(void);
+
 #endif
