@@ -25,6 +25,7 @@
 #include <mmu/frame.h>
 #include <mmu/paging.h>
 #include <net/net.h>
+#include <proc/process.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/k_syscall.h>
@@ -37,6 +38,19 @@ void check_interrupts();
 void busywait(uint64_t seconds);
 void print_debug_gdt();
 void print_debug_tss();
+
+void task_kshell()
+{
+  printf("kernel: loading kshell...\n");
+  INFO("%s", "loading kshell");
+
+  kshell_init();
+
+  while (1) {
+    kshell_run(keyboard_get_scancode());
+    process_yield();
+  }
+}
 
 void print_debug_tss()
 {
@@ -306,16 +320,15 @@ void kmain(uint64_t addr)
     mbi, MULTIBOOT_TAG_TYPE_CMDLINE);
 
   if (cmdline && strcmp(cmdline->string, "kshell") == 0) {
-    printf("kernel: loading kshell...\n");
-    INFO("%s", "loading kshell");
-
-    kshell_init();
+    process_init();
+    process_create_task("kshell", (uint64_t)&task_kshell);
 
     while (1) {
-      kshell_run(keyboard_get_scancode());
       // This allows the CPU to enter a sleep state in which it consumes much
       // less energy. See: https://en.wikipedia.org/wiki/HLT_(x86_instruction)
       __asm__("hlt");
+
+      process_yield();
     }
   }
 
