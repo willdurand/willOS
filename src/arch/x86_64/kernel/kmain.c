@@ -29,6 +29,10 @@
 #include <string.h>
 #include <sys/k_syscall.h>
 
+#ifdef ENABLE_FRAMEBUFFER
+#include <drivers/vbe_video.h>
+#endif
+
 void print_welcome_message();
 void print_step(const char* msg);
 void print_sub_step(const char* msg);
@@ -166,6 +170,16 @@ void kmain(uint64_t addr)
   print_step("initializing heap allocator");
   alloc_init();
   print_ok();
+
+#ifdef ENABLE_FRAMEBUFFER
+  vbe_video_init(&entry->common);
+  video_clear(MAKE_RGB(0, 128, 0));
+  video_console_attach();
+
+#if ENABLE_FRAMEBUFFER_STATS
+  video_enable_debug_stats(true);
+#endif
+#endif
 
   print_step("initializing syscalls");
   syscall_init();
@@ -313,9 +327,14 @@ void kmain(uint64_t addr)
 
     while (1) {
       kshell_run(keyboard_get_scancode());
+
+#if ENABLE_FRAMEBUFFER
+      video_swap_buffers();
+#else
       // This allows the CPU to enter a sleep state in which it consumes much
       // less energy. See: https://en.wikipedia.org/wiki/HLT_(x86_instruction)
       __asm__("hlt");
+#endif
     }
   }
 

@@ -48,7 +48,7 @@ VBE_BPP    = 32
 EXTERNAL_DEPS = liballoc printf vtconsole
 
 EXTERNAL_DIRS    := $(addprefix $(EXTERNAL_DIR)/,$(EXTERNAL_DEPS))
-LIBK_OBJECTS     := $(patsubst %.c, $(LIBK_OBJS_DIR)/%.o, $(shell find $(ARCH_SRC) src/libc $(EXTERNAL_DIRS) -name '*.c'))
+LIBK_OBJECTS     := $(patsubst %.c, $(LIBK_OBJS_DIR)/%.o, $(shell find $(ARCH_SRC) src/libc src/graphics $(EXTERNAL_DIRS) -name '*.c'))
 LIBK_ASM_OBJECTS := $(patsubst %.asm, $(LIBK_OBJS_DIR)/%.o, $(shell find $(ARCH_SRC)/asm -name '*.asm'))
 LIBC_OBJECTS     := $(patsubst %.c, $(LIBC_OBJS_DIR)/%.o, $(shell find src/libc $(EXTERNAL_DIRS) -name '*.c'))
 LIBC_ASM_OBJECTS := $(patsubst %.asm, $(LIBC_OBJS_DIR)/%.o, $(shell find src/libc/asm -name '*.asm'))
@@ -66,7 +66,7 @@ QEMU_OPTIONS = -m 500M \
 	 -DGIT_HASH=\"$(GIT_HASH)\" \
 	 -DLOGS_WITH_COLORS \
 	 -Wall -pedantic -std=c11 -O2 -ffreestanding -nostdlib \
-	 -fno-builtin -fstack-protector -mno-red-zone -mno-sse2 -fno-omit-frame-pointer \
+	 -fno-builtin -fstack-protector -mno-red-zone -fno-omit-frame-pointer \
 	 -I src/ -I src/arch/$(ARCH)/ -I include/ $(addprefix -I$(EXTERNAL_DIR)/,$(EXTERNAL_DEPS)) \
 	 -I $(EXTERNAL_DIR)/scalable-font2/
 
@@ -111,6 +111,16 @@ endif
 ifeq ($(ENABLE_FRAMEBUFFER), 1)
 	CFLAGS += -DENABLE_FRAMEBUFFER
 	NASM_OPTIONS += -dENABLE_FRAMEBUFFER
+endif
+
+ifeq ($(ENABLE_FRAMEBUFFER_STATS), 1)
+	CFLAGS += -DENABLE_FRAMEBUFFER_STATS
+endif
+
+ifeq ($(ENABLE_SSE2), 1)
+	NASM_OPTIONS += -dENABLE_SSE2
+else
+	CFLAGS += -mno-sse2
 endif
 
 GRUB_KERNEL_CMDLINE ?= /bin/init -s
